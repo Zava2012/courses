@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN apt update && \
     apt upgrade --yes && \
-    rm -rf /var/lib/apt/lists
+    rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./
 RUN pip3 install --no-cache-dir -r requirements.txt

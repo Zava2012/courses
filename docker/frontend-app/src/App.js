@@ -12,7 +12,7 @@ function App() {
           Edit <code>src/App.js</code> and save to reload
         </p>
         <p>
-          My env is {MYENV}
+          My env is ${MYENV}
         </p>
         <a
           className="App-link"

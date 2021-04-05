@@ -12,9 +12,10 @@ COPY ./ ./
 # ENV MYENV=${MYENV:-4000}
 
 RUN npm run build
+# CMD [ "npm", "start" ]
 
 
-FROM nginx:alpine
+FROM nginx:alpine AS app
 
 COPY --from=build /app/build/ /usr/share/nginx/html/
 # COPY entrypoint.sh /docker-entrypoint.d/

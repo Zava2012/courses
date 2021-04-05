@@ -1,10 +1,8 @@
 #!/bin/sh
 
-for file in /usr/share/nginx/html/static/js/main.*.js; do
-  if [ ! -f $file.tmpl.js ]; then
-    cp $file $file.tmpl.js
+for file in /usr/share/nginx/html/static/js/main.*.js*; do
+  if [ ! -f $file.js.tmpl ]; then
+    cp $file $file.tmpl
   fi
-  envsubst '$REACT_APP_NAME' < $file.tmpl.js > $file
+  envsubst '${MYENV}' < $file.tmpl > $file
 done
-
-exec "$@"

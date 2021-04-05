@@ -2,13 +2,13 @@ FROM python:3-slim
 
 WORKDIR /app
 
-RUN apt update && \
-    apt upgrade --yes && \
-    rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt ./
 RUN pip3 install --no-cache-dir -r requirements.txt
 COPY ./ ./
+
+RUN apt update && \
+    apt upgrade --yes && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN useradd test
 RUN chown -R test:test ./

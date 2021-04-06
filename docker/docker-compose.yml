@@ -5,9 +5,11 @@ services:
     build:
       context: backend-app/src
       dockerfile: ../Dockerfile
-    image: backend:1.0.1
+    image: zava2012/backend:1.0.0
     restart: always
-    # container_name: backend-app
+    container_name: backend-app
+    # labels:
+    #   com.centurylinklabs.watchtower.enable: true
     environment:
       APP_HOST: 0.0.0.0
     ports: ["5000"]
@@ -23,10 +25,19 @@ services:
 
   frontend:
     build: frontend-app/
-    image: frontend:1.0.1
+    image: zava2012/frontend:1.0.0
     restart: always
     # container_name: frontend-app
     environment:
       REACT_APP_NAME: myenv
     ports:
       - 80:80
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    environment:
+      WATCHTOWER_DEBUG: "true"
+      WATCHTOWER_POLL_INTERVAL: 60
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

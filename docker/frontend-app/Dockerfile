@@ -18,4 +18,4 @@ RUN npm run build
 FROM nginx:alpine AS app
 
 COPY --from=build /app/build/ /usr/share/nginx/html/
-COPY entrypoint.sh /docker-entrypoint.d/
+# COPY entrypoint.sh /docker-entrypoint.d/

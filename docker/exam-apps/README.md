@@ -1,4 +1,4 @@
-Environment varialbes:
+Environment variables:
 
 Backend:
 - `HOST` (example value: `0.0.0.0`)
@@ -6,6 +6,7 @@ Backend:
 - `DB_HOST` (example value: `127.0.0.1`)
 - `DB_PORT` (example value: `27017`)
 - `DB_NAME` (example value: `books_db`)
+- `DB_COLLECTION` (example value: `mybooks`)
 
 Frontend:
 - `API_HOST` (example value: `localhost`)

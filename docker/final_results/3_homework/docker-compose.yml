@@ -1,0 +1,55 @@
+version: '3.9'
+
+x-common: &common
+  restart: always
+  networks:
+    - mynet
+
+services:
+  backend:
+    build:
+      context: backend/
+      args:
+        ARG_PROD: production
+    image: backend-exam:1.0.0
+    command: sh -c './wait-for mongo:27017 -- node .'
+    environment:
+      HOST: 0.0.0.0
+      PORT: &myport 7002
+      DB_HOST: mongo
+      DB_PORT: 27017
+      DB_NAME: books_db
+      DB_COLLECTION: mybooks
+    ports:
+      - 7000:7002
+    <<: *common
+
+  frontend:
+    build:
+      context: frontend/
+      args:
+        ARG_PROD: production
+    image: frontend-exam:1.0.0
+    ports: ["80:80"]
+    environment:
+      BACKEND_HOST: localhost
+      BACKEND_PORT: 7000
+      PROD_STATE: "true"
+    <<: *common
+
+  mongo:
+    image: mongo:4
+    ports: ["27017"]
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    <<: *common
+
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+
+networks:
+  mynet:
+    external: true

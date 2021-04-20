@@ -50,6 +50,6 @@ volumes:
   mongodb_data:
   mongodb_config:
 
-networks:
-  mynet:
-    external: true
+# networks:
+#   mynet:
+#     external: true

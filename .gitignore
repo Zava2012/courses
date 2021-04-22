@@ -2,4 +2,4 @@
 **/dist/
 **/build/
 
-kubernetes/
+kubernetes/manifests/

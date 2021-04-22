@@ -2,8 +2,8 @@ version: '3.9'
 
 x-common: &common
   restart: always
-  networks:
-    - mynet
+  # networks:
+  #   - mynet
 
 services:
   backend:

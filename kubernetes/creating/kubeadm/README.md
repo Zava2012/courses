@@ -63,12 +63,12 @@
     sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     sudo chown $(id -u):$(id -g) $HOME/.kube/config
     ```
-3. Задерлоить CNI плагин в только что созданный Kubernetes кластер. Для примера, возьмём Calico и задеплоим его в кластер следующей командой:
+3. Задерлоить CNI (Container Network Interface) плагин в только что созданный Kubernetes кластер. Для примера, возьмём Calico и задеплоим его в кластер следующей командой:
     - `kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml`
-4. После успешного деплоя CNI плагина выполнить следующую команду и проверить, что статус ноды `Ready`:
+4. После успешного деплоя CNI плагина подождать около минуты и выполнить следующую команду, чтобы проверить, что статус ноды `Ready`:
     - `kubectl get node`
 
-### Подготовка Worker Nodes
+### Подготовка Worker Node
 1. Выполнить команду, которая появилась после успешной инициализации кластера. Она позволить присоединить узел в кластер Kubernetes. Ниже представлен шаблон этой команды:
     - `sudo kubeadm join <control-plane-host>:<control-plane-port> --token <token> --discovery-token-ca-cert-hash sha256:<hash>`
 2. Перейти на виртуальную машину, где развёрнут Control Plane и ввести следующую команду, которая должна показать, что в кластере уже две ноды со статусом `Ready`:

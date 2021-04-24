@@ -16,6 +16,8 @@
     - `multipass shell <node_name>`
     - `multipass shell` (попытается зайти на primary-сервер)
     - `multipass shell worker`
+9. **(Только для WSL)** Если вы развернули виртуальные сервера через multipass на Windows, то умолчанию WSL до них никаким образом не может достучаться по причине того, что они находятся в разных виртуальных сетях. Чтобы исправить эту проблему и в перспективе успешно развернуть кластер Kubernetes, запуская его развёртывание через Ansible на WSL, необходимо выполнить следующую команду **в PowerShell от имени администратора**, что может повлечь за собой изменение IP-адресов виртуальных машин, развёрнутых с использованием multipass:
+    - `Get-NetIPInterface | where {$_.InterfaceAlias -eq "vEthernet (WSL)" -or $_.InterfaceAlias -eq "vEthernet (Default Switch)" } | Set-NetIPInterface -Forwarding Enabled`
 
 ### Развёртывание кластера
 1. Склонируйте репиторий `kubespray` с [GitHub](https://github.com/kubernetes-sigs/kubespray) и перейдите в папку с проектом

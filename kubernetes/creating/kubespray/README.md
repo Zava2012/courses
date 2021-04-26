@@ -92,7 +92,7 @@
     },
     ```
 4. Перейти в папку `inventory/devopsschool/` и выполнить следующую команду:
-    - `terraform init`
+    - `terraform init ../../contrib/terraform/aws`
 5. Создать пользователя в AWS с `Programmatic access` для генерации ключей, а также добавить этому пользователю следующие политики:
     ```
     AmazonEC2FullAccess

@@ -23,9 +23,18 @@
 
 ## Развёртывание кластера
 ### Вариант 1
-1. Через большую консольную команду:
+1. Через большую консольную команду, которая сохраняет состояние кластера в S3 бакете:
     - `kops create cluster --name=devopsschool.k8s.local --cloud aws --master-count 1 --master-size t3a.small --master-volume-size 20 --node-count 1 --node-size t3a.small --node-volume-size 20 --ssh-public-key="~/.ssh/id_rsa.pub" --networking calico --container-runtime containerd`
-
+2. Запустить развёртывание кластера при помощи следующей команды:
+    - `kops update cluster devopsschool.k8s.local --yes`
+3. Дождаться успешного запуска кластера, используя следующую команду:
+    - `kops validate cluster --wait 10m`
 ### Вариант 2
 1. С использование файла `kops.yaml`, выполнив следующую команду:
     - `kops create -f kops.yaml`
+2. Создать секрет через утилиту `kops` с именем `admin`, который включает в себя публичный ключ, который будет добавлен на каждый инстанс в кластере. Сделать это необходимо следующей командой:
+    - `kops create secret --name devopsschool.k8s.local sshpublickey admin -i ~/.ssh/id_rsa.pub`
+3. Запустить развёртывание кластера при помощи следующей команды:
+    - `kops update cluster devopsschool.k8s.local --yes`
+4. Дождаться успешного запуска кластера, используя следующую команду:
+    - `kops validate cluster --wait 10m`

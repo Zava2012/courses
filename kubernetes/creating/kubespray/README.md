@@ -63,7 +63,7 @@
 1. Склонируйте репиторий `kubespray` с [GitHub](https://github.com/kubernetes-sigs/kubespray) и перейдите в папку с проектом
 2. Скопируйте папку с inventory для terraform модуля, используя следующую команду:
     - `cp -rpL contrib/terraform/aws/sample-inventory/ inventory/devopsschool/`
-3. По пути `сontrib/terraform/aws/modules/iam/` изменить в файле `main.tf` IAM Policy в ресурсе, под названием `resource "aws_iam_role_policy" "kube-worker"`, чтобы в перспективе корректно работал `AWS EBS CSI` драйвер.
+3. По пути `сontrib/terraform/aws/modules/iam/` изменить в файле `main.tf` IAM Policy в ресурсе, под названием `resource "aws_iam_role_policy" "kube-worker"`, чтобы в перспективе корректно работал `AWS EBS CSI (Container Storage Interface)` драйвер.
 
     Заменить надо с этого блока:
     ```

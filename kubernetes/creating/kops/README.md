@@ -3,7 +3,6 @@
 2. Создать пользователя в AWS с `Programmatic access` для генерации ключей, а также добавить этому пользователю следующие политики:
     ```
     AmazonEC2FullAccess
-    AmazonRoute53FullAccess
     AmazonS3FullAccess
     IAMFullAccess
     AmazonVPCFullAccess

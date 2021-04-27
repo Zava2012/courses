@@ -26,10 +26,10 @@
     - `kops create cluster --name=devopsschool.k8s.local --cloud aws --master-count 1 --master-size t3a.small --master-volume-size 20 --node-count 1 --node-size t3a.small --node-volume-size 20 --ssh-public-key="~/.ssh/id_rsa.pub" --networking calico --container-runtime containerd`
 2. Запустить развёртывание кластера при помощи следующей команды:
     - `kops update cluster devopsschool.k8s.local --yes`
-3. Дождаться успешного запуска кластера, используя следующую команду:
-    - `kops validate cluster --wait 10m`
-4. Экспортировать себе временный (по дефолту - 18 часов) kubeconfig с использованием следующей команды:
+3. Экспортировать себе временный (по дефолту - 18 часов) kubeconfig с использованием следующей команды:
     - `kops export kubecfg --admin`
+4. Дождаться успешного запуска кластера, используя следующую команду:
+    - `kops validate cluster --wait 10m`
 5. На локальной машине ввести следующую команду, которая должна показать, что в кластере работают две ноды и они уже со статусом `Ready`:
     - `kubectl get node`
 ### Вариант 2
@@ -39,9 +39,9 @@
     - `kops create secret --name devopsschool.k8s.local sshpublickey admin -i ~/.ssh/id_rsa.pub`
 3. Запустить развёртывание кластера при помощи следующей команды:
     - `kops update cluster devopsschool.k8s.local --yes`
-4. Дождаться успешного запуска кластера, используя следующую команду:
-    - `kops validate cluster --wait 10m`
-5. Экспортировать себе временный (по дефолту - 18 часов) kubeconfig с использованием следующей команды на локальной машине:
+4. Экспортировать себе временный (по дефолту - 18 часов) kubeconfig с использованием следующей команды на локальной машине:
     - `kops export kubecfg --admin`
+5. Дождаться успешного запуска кластера, используя следующую команду:
+    - `kops validate cluster --wait 10m`
 6. На локальной машине ввести следующую команду, которая должна показать, что в кластере работают две ноды и они уже со статусом `Ready`:
     - `kubectl get node`

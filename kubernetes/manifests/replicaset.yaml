@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      myapp: nginxrs
+  template:
+    metadata:
+      name: nginx_pod
+      labels:
+        myapp: nginxrs
+    spec:
+      containers:
+        - name: mynginx
+          image: nginx:1.20-alpine
+          ports:
+            - containerPort: 80

@@ -2,4 +2,4 @@
 **/dist/
 **/build/
 
-kubernetes/manifests/
+kubernetes/manifests/common.yaml

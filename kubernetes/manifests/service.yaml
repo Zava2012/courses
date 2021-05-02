@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginxservice
+spec:
+  selector:
+    deploy: blue
+  ports:
+  - name: backend
+    port: 7000
+    # targetPort: 5000
+    # nodePort range - 30000-32767
+    nodePort: 30080
+  - name: frontend
+    port: 80
+    # targetPort: 5000
+    # nodePort range - 30000-32767
+    # nodePort: 30080
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginxnextservice
+spec:
+  selector:
+    app: nginxnextdeploy
+  ports:
+  - port: 80

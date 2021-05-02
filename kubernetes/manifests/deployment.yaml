@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginxdeploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginxdeploy
+  template:
+    metadata:
+      labels:
+        app: nginxdeploy
+        deploy: blue
+    spec:
+      containers:
+      - name: nginxdeploy
+        image: yourusername/yourrepo:1.0.0
+        env:
+          - name: HOST
+            value: 0.0.0.0
+          - name: PORT
+            value: "7000"
+        ports:
+        - containerPort: 7000
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginxnextdeploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deploy: blue
+  template:
+    metadata:
+      labels:
+        app: nginxnextdeploy
+        deploy: blue
+    spec:
+      containers:
+      - name: nginxnextdeploy
+        image: yourusername/yourrepo:1.0.0
+        env:
+          - name: BACKEND_HOST
+            value: <mydomain>
+          - name: BACKEND_PORT
+            value: "80"
+          - name: PROD_STATE
+            value: "true"
+        ports:
+        - containerPort: 80

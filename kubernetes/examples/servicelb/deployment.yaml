@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+        deploy: "true"
+    spec:
+      containers:
+      - name: myapp
+        image: nginx:1.15-alpine
+        resources:
+          limits:
+            memory: "25Mi"
+            cpu: "5m"
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mynewapp
+spec:
+  selector:
+    matchLabels:
+      app: mynewapp
+  template:
+    metadata:
+      labels:
+        app: mynewapp
+        deploy: "true"
+    spec:
+      containers:
+      - name: mynewapp
+        image: nginx:1.13-alpine
+        resources:
+          limits:
+            memory: "25Mi"
+            cpu: "5m"
+        ports:
+        - containerPort: 80

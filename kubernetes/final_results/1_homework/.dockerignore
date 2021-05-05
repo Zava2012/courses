@@ -1,0 +1,7 @@
+.git*
+.docker*
+Dockerfile*
+docker-compose*.y[a]ml
+*.md
+
+manifests/

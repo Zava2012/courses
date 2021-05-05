@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  app:
+    build: ./
+    image: yourusername/yourrepo:1.0.0
+    restart: Always
+    environment:
+      HOST: 0.0.0.0
+      PORT: 5000
+      ROUTE_PATH: /yourlastname
+      NAMESPACE: myns
+      POD_IP: 192.168.1.1
+      POD_NAME: mycontainer
+    ports:
+      - 5000:5000

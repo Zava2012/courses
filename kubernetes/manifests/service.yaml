@@ -22,9 +22,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginxnextservice
+  name: mygoappservice
 spec:
   selector:
-    app: nginxnextdeploy
+    app: mygoapp
   ports:
   - port: 80
+    targetPort: 4000

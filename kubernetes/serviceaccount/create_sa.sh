@@ -1,11 +1,10 @@
 #!/bin/bash
 
-set -e
-set -o pipefail
+set -euo pipefail
 
 if [[ -z "$1" ]] || [[ -z "$2" ]]; then
- echo "usage: $0 <service_account_name> <namespace>"
- exit 1
+    echo "usage: $0 <service_account_name> <namespace>"
+    exit 1
 fi
 
 SERVICE_ACCOUNT_NAME=$1
@@ -89,7 +88,7 @@ extract_ca_crt_from_secret
 get_user_token_from_secret
 set_kube_config_values
 
-echo -e "\\nAll done! Test with:"
-echo "KUBECONFIG=${KUBECFG_FILE_NAME} kubectl get pods"
+echo -e "\\nAll done!"
+echo "Kubeconfig located at ${KUBECFG_FILE_NAME}"
 echo "you should not have any permissions by default - you have just created the authentication part"
 echo "You will need to create RBAC permissions"

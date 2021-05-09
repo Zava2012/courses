@@ -4,8 +4,16 @@ metadata:
   creationTimestamp: "2021-04-14T08:59:40Z"
   name: devopsschool.k8s.local
 spec:
-  certManager:
+  nodeTerminationHandler:
     enabled: true
+  awsLoadBalancerController:
+    enabled: true
+  clusterAutoscaler:
+    enabled: true
+  kubeDNS:
+    provider: CoreDNS
+    nodeLocalDNS:
+      enabled: true
   metricsServer:
     enabled: true
   kubeAPIServer:

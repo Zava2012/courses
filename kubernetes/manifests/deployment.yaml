@@ -1,54 +1,117 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginxdeploy
+  name: ali
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: nginxdeploy
+      app: ali
   template:
     metadata:
       labels:
-        app: nginxdeploy
-        deploy: blue
+        app: ali
     spec:
       containers:
-      - name: nginxdeploy
-        image: yourusername/yourrepo:1.0.0
-        env:
-          - name: HOST
-            value: 0.0.0.0
-          - name: PORT
-            value: "7000"
-        ports:
-        - containerPort: 7000
+      - name: ali
+        image: nakabonne/ali
+        # Override ENTRYPOINT in Dockerfile
+        command: ["sh", "-c"]
+        # Override CMD in Dockerfile
+        args:
+          - |
+            set -eu
+
+            sleep infinity
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginxnextdeploy
+  annotations:
+    reloader.stakater.com/auto: "true"
+  name: mygoapp
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
-      deploy: blue
+      app: mygoapp
   template:
     metadata:
       labels:
-        app: nginxnextdeploy
-        deploy: blue
+        app: mygoapp
     spec:
+      terminationGracePeriodSeconds: 60
+      enableServiceLinks: false
+      volumes:
+        - name: mycmvolume
+          configMap:
+            name: mygoappconfigmapfiles
+        - name: mysecretvolume
+          secret:
+            name: mysecretfiles
+      # для корректной работы необходимо создать абстракцию Secret, используя команду
+      # kubectl create secret generic dockerhub --from-file=.dockerconfigjson=$HOME/.docker/config.json --type=kubernetes.io/dockerconfigjson
+      imagePullSecrets:
+        - name: dockerhub
       containers:
-      - name: nginxnextdeploy
-        image: yourusername/yourrepo:1.0.0
-        env:
-          - name: BACKEND_HOST
-            value: <mydomain>
-          - name: BACKEND_PORT
-            value: "80"
-          - name: PROD_STATE
-            value: "true"
+      - name: mygoapp
+        image: yourname/yourrepo:1.0.0
+        imagePullPolicy: Always
+        readinessProbe:
+          tcpSocket:
+            port: 4000
+        livenessProbe:
+          tcpSocket:
+            port: 4000
+        startupProbe:
+          tcpSocket:
+            port: 4000
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - nginx -s quit
         ports:
-        - containerPort: 80
+          - containerPort: 4000
+        volumeMounts:
+          - mountPath: /app/app.properties
+            name: mycmvolume
+            subPath: myapp.properties
+          - mountPath: /media/mynewsecretfile
+            name: mysecretvolume
+            subPath: mysecretfile
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: yes
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          limits:
+            cpu: 10m
+            memory: 15Mi
+        env:
+          # - name: HOST
+          #   value: 0.0.0.0
+          # - name: PORT
+          #   value: "4000"
+          # - name: ROUTE_PATH
+          #   value: /mylastname
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        envFrom:
+          - configMapRef:
+              name: mygoappenvconfigmap
+          - secretRef:
+              name: myenvsecret

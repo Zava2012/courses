@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginxservice
+  name: aliservice
 spec:
   selector:
-    deploy: blue
+    app: ali
   ports:
   - name: backend
     port: 7000

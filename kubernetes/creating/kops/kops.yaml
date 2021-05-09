@@ -6,8 +6,6 @@ metadata:
 spec:
   nodeTerminationHandler:
     enabled: true
-  awsLoadBalancerController:
-    enabled: true
   clusterAutoscaler:
     enabled: true
   kubeDNS:
@@ -16,6 +14,7 @@ spec:
       enabled: true
   metricsServer:
     enabled: true
+    insecure: true
   kubeAPIServer:
     eventTTL: 24h0m0s
     featureGates:

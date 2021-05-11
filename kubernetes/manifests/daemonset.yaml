@@ -1,37 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ali
-spec:
-  selector:
-    matchLabels:
-      app: ali
-  template:
-    metadata:
-      labels:
-        app: ali
-    spec:
-      containers:
-      - name: ali
-        image: nakabonne/ali
-        # Override ENTRYPOINT in Dockerfile
-        command: ["sh", "-c"]
-        # Override CMD in Dockerfile
-        args:
-          - |
-            set -eu
-
-            sleep infinity
-
----
-apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   annotations:
     reloader.stakater.com/auto: "true"
   name: mygoapp
 spec:
-  replicas: 3
   selector:
     matchLabels:
       app: mygoapp
@@ -40,15 +13,9 @@ spec:
       labels:
         app: mygoapp
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                - key: node.kubernetes.io/instance-type
-                  operator: In
-                  values:
-                    - t3a.medium
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       terminationGracePeriodSeconds: 60
       enableServiceLinks: false
       volumes:
@@ -58,9 +25,6 @@ spec:
         - name: mysecretvolume
           secret:
             secretName: mysecretfiles
-        - name: mypvcvolume
-          persistentVolumeClaim:
-            claimName: mypvc
       # для корректной работы необходимо создать абстракцию Secret, используя команду
       # kubectl create secret generic dockerhub --from-file=.dockerconfigjson=$HOME/.docker/config.json --type=kubernetes.io/dockerconfigjson
       imagePullSecrets:
@@ -92,8 +56,6 @@ spec:
           - mountPath: /media/mynewsecretfile
             name: mysecretvolume
             subPath: mysecretfile
-          - mountPath: /mymountedpvcvolume
-            name: mypvcvolume
         securityContext:
           privileged: false
           allowPrivilegeEscalation: false

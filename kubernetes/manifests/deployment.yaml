@@ -31,7 +31,7 @@ metadata:
     reloader.stakater.com/auto: "true"
   name: mygoapp
 spec:
-  replicas: 3
+  # replicas: 3
   selector:
     matchLabels:
       app: mygoapp
@@ -40,31 +40,6 @@ spec:
       labels:
         app: mygoapp
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                - key: node.kubernetes.io/instance-type
-                  operator: In
-                  values:
-                    - t3a.medium
-      terminationGracePeriodSeconds: 60
-      enableServiceLinks: false
-      volumes:
-        - name: mycmvolume
-          configMap:
-            name: mygoappconfigmapfiles
-        - name: mysecretvolume
-          secret:
-            secretName: mysecretfiles
-        - name: mypvcvolume
-          persistentVolumeClaim:
-            claimName: mypvc
-      # для корректной работы необходимо создать абстракцию Secret, используя команду
-      # kubectl create secret generic dockerhub --from-file=.dockerconfigjson=$HOME/.docker/config.json --type=kubernetes.io/dockerconfigjson
-      imagePullSecrets:
-        - name: dockerhub
       containers:
       - name: mygoapp
         image: yourname/yourrepo:1.0.0
@@ -92,8 +67,8 @@ spec:
           - mountPath: /media/mynewsecretfile
             name: mysecretvolume
             subPath: mysecretfile
-          - mountPath: /mymountedpvcvolume
-            name: mypvcvolume
+          # - mountPath: /mymountedpvcvolume
+          #   name: mypvcvolume
         securityContext:
           privileged: false
           allowPrivilegeEscalation: false
@@ -129,3 +104,28 @@ spec:
               name: mygoappenvconfigmap
           - secretRef:
               name: myenvsecret
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: node.kubernetes.io/instance-type
+                  operator: In
+                  values:
+                    - t3a.medium
+      terminationGracePeriodSeconds: 60
+      enableServiceLinks: false
+      volumes:
+        - name: mycmvolume
+          configMap:
+            name: mygoappconfigmapfiles
+        - name: mysecretvolume
+          secret:
+            secretName: mysecretfiles
+        # - name: mypvcvolume
+        #   persistentVolumeClaim:
+        #     claimName: mypvc
+      # для корректной работы необходимо создать абстракцию Secret, используя команду
+      # kubectl create secret generic dockerhub --from-file=.dockerconfigjson=$HOME/.docker/config.json --type=kubernetes.io/dockerconfigjson
+      imagePullSecrets:
+        - name: dockerhub

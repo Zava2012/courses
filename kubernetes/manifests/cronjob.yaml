@@ -1,0 +1,17 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: myjob
+spec:
+  schedule: "*/1 * * * *"
+  concurrencyPolicy: Replace
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 5
+      template:
+        spec:
+          containers:
+          - name: myalpine
+            image: alpine
+            command: ["date"]
+          restartPolicy: Never

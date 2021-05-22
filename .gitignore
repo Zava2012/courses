@@ -2,5 +2,4 @@
 **/dist/
 **/build/
 
-kubernetes/manifests/app.yaml
 kubernetes/final_results/2_homework/

@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: myrole
+rules:
+  - verbs: ["get", "list"]
+    resources: ["deployments"]
+    apiGroups: ["apps"]
+  - verbs: ["get", "list"]
+    resources: ["pods"]
+    apiGroups: [""]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: myclusterrole
+rules:
+  - verbs: ["get", "list"]
+    resources: ["deployments"]
+    apiGroups: ["apps"]
+  - verbs: ["get", "list"]
+    resources: ["pods", "namespaces"]
+    apiGroups: [""]

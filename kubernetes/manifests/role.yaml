@@ -1,14 +1,17 @@
+# ABAC -> RBAC
+
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: myrole
 rules:
   - verbs: ["get", "list"]
-    resources: ["deployments"]
+    # kubectl api-resources
+    resources: ["deployments", "statefulsets"]
     apiGroups: ["apps"]
   - verbs: ["get", "list"]
     resources: ["pods"]
-    apiGroups: [""]
+    apiGroups: [""] # for core API Group where apiVersion field is v1
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -16,9 +19,12 @@ kind: ClusterRole
 metadata:
   name: myclusterrole
 rules:
-  - verbs: ["get", "list"]
+  - verbs: ["get", "list", "delete"]
+    # kubectl api-resources
     resources: ["deployments"]
+    resourceNames: ["ali"]
     apiGroups: ["apps"]
   - verbs: ["get", "list"]
+    # kubectl api-resources
     resources: ["pods", "namespaces"]
-    apiGroups: [""]
+    apiGroups: [""] # for core API Group where apiVersion field is v1

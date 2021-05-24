@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejsapp
+spec:
+  selector:
+    matchLabels:
+      app: nodejsapp
+  template:
+    metadata:
+      labels:
+        app: nodejsapp
+    spec:
+      containers:
+      - name: nodejsapp
+        image: $IMAGE_REPO:$TAG-$GIT_COMMIT
+        resources:
+          limits:
+            cpu: 25m
+            memory: 25Mi
+        env:
+          - name: HOST
+            value: 0.0.0.0
+          - name: PORT
+            value: "5000"
+        ports:
+        - containerPort: 5000

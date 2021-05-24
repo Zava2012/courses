@@ -1,0 +1,5 @@
+.git*
+**/node_modules/
+.dockeringore
+**/*.md
+*.xml

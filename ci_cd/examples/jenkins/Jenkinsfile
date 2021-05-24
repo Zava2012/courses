@@ -1,0 +1,105 @@
+@Library('mylib@master') _
+
+pipeline {
+    agent {
+        label 'docker'
+    }
+    environment {
+        IMAGE_REPO = 'zava2012/jenkins-test'
+        TAG = sh(script: "jq -r '.version' ci_cd/examples/jenkins/package.json", returnStdout: true).trim()
+    }
+    // triggers {
+    //     cron '*/5 * * * *'
+    // }
+    stages {
+        stage("Validate Dockerfile") {
+            agent {
+                docker {
+                    image 'ghcr.io/hadolint/hadolint:latest-alpine'
+                    label 'docker'
+                }
+            }
+            steps {
+                sh 'env'
+                sh 'echo my $STAGE_NAME > file'
+                myVars("${STAGE_NAME}")
+                sh 'ls -la && cat file'
+                stash includes: '**/file', name: 'myfile'
+                sh 'hadolint -f json ci_cd/examples/jenkins/Dockerfile > hadolint.json'
+            }
+            post {
+                always {
+                    recordIssues(tools: [hadoLint(pattern: '**/hadolint.json')])
+                }
+            }
+        }
+        stage("Build App") {
+            steps {
+                unstash 'myfile'
+                sh 'env'
+                sh 'ls -la && cat file'
+                sh 'docker build -t $IMAGE_REPO:$TAG-$GIT_COMMIT -t $IMAGE_REPO:latest ./ci_cd/examples/jenkins/'
+            }
+        }
+        stage("Tests") {
+            when {
+                not {
+                    branch 'master'
+                }
+            }
+            agent {
+                docker {
+                    image 'node:14-alpine'
+                    label 'docker'
+                }
+            }
+            steps {
+                sh '''
+                cd ci_cd/examples/jenkins/
+                npm ci
+                npm test
+                '''
+            }
+            post {
+                always {
+                    // junit '**/test-results.xml'
+                    recordIssues(
+                        enabledForFailure: true,
+                        tools: [junitParser(pattern: '**/test-results.xml')]
+                    )
+                }
+            }
+        }
+        stage("Docker Push") {
+            steps {
+                withDockerRegistry(credentialsId: 'dockerhub', url: 'https://index.docker.io/v1/') {
+                    sh '''
+                    docker push $IMAGE_REPO:$TAG-$GIT_COMMIT
+                    docker push $IMAGE_REPO:latest
+                    '''
+                }
+            }
+        }
+        stage("Deploy") {
+            steps {
+                // input 'Do you want to deploy on Production?'
+                sh '''
+                tmpfile=$(mktemp)
+                for i in ci_cd/examples/jenkins/kubernetes/*.yaml; do
+                    cat $i | envsubst > $tmpfile
+                    cp -pf $tmpfile $i
+                    rm -f "$tmpfile"
+                done
+                '''
+                withKubeConfig(credentialsId: 'kubeconfig') {
+                    sh 'kubectl apply -f ci_cd/examples/jenkins/kubernetes/'
+                }
+            }
+        }
+    }
+    post {
+        cleanup {
+            cleanWs()
+        }
+    }
+}

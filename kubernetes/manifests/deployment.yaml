@@ -104,6 +104,9 @@ spec:
               name: mygoappenvconfigmap
           - secretRef:
               name: myenvsecret
+      initContainers:
+        - name: aws-cli
+          image: alpine
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

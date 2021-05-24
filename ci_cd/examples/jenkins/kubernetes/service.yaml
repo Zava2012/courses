@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodejsapp
+spec:
+  selector:
+    app: nodejsapp
+  ports:
+  - port: 5000

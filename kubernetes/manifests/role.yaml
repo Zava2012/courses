@@ -11,7 +11,7 @@ rules:
     apiGroups: ["apps"]
   - verbs: ["get", "list"]
     resources: ["pods"]
-    apiGroups: [""] # for core API Group where apiVersion field is v1
+    apiGroups: [""] # for core API Group where apiVersion field has only API Version without explicit reference to API Group
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -27,4 +27,4 @@ rules:
   - verbs: ["get", "list"]
     # kubectl api-resources
     resources: ["pods", "namespaces"]
-    apiGroups: [""] # for core API Group where apiVersion field is v1
+    apiGroups: [""] # for core API Group where apiVersion field has only API Version without explicit reference to API Group

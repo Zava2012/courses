@@ -31,6 +31,7 @@ metadata:
     reloader.stakater.com/auto: "true"
   name: mygoapp
 spec:
+  # You don't need to use "replicas" field when you use HPA
   # replicas: 3
   selector:
     matchLabels:

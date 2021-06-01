@@ -9,11 +9,10 @@ spec:
     requests.storage: 5Gi
     limits.cpu: 500m
     limits.memory: 1Gi
-    pods: "1"
+    pods: "110"
     services: "1"
     services.loadbalancers: "1"
     services.nodeports: "1"
     configmaps: "1"
     secrets: "1"
     persistentvolumeclaims: "1"
-

@@ -3,6 +3,7 @@ kind: Pod
 metadata:
   name: mynginxpod
 spec:
+  serviceAccountName: mysa
   containers:
   - name: nginx
     image: nginx:stable

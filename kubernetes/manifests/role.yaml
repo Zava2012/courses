@@ -28,3 +28,14 @@ rules:
     # kubectl api-resources
     resources: ["pods", "namespaces"]
     apiGroups: [""] # for core API Group where apiVersion field has only API Version without explicit reference to API Group
+
+# For PSP
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mypsprole
+rules:
+  - apiGroups: ["policy"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["use"]

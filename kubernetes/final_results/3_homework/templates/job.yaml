@@ -1,0 +1,167 @@
+{{ range .Values.job -}}
+{{ if .enabled -}}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+  labels:
+    {{- include "devopsschool.labels" $ | nindent 4 }}
+  {{- if .annotations }}
+  annotations:
+    {{- range $key, $value := .annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  backoffLimit: {{ .backoffLimit }}
+  template:
+    spec:
+      {{- with $.Values.injectServiceVariables }}
+      enableServiceLinks: {{ . }}
+      {{- end }}
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+          image: "{{ $.Values.image.registry }}/{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          {{- with .command }}
+          command:
+          {{- range . }}
+            - {{ . }}
+          {{- end }}
+          {{- end }}
+          {{- with .args }}
+          args:
+            - |
+{{ tpl . $ | trim | indent 14 }}
+          {{- end }}
+          {{- if or $.Values.envVariables $.Values.envSecrets $.Values.envFromConfigMap $.Values.envFromSecret }}
+          envFrom:
+          {{- if $.Values.envVariables }}
+            - configMapRef:
+                name: {{ include "devopsschool.fullname" $ }}
+          {{- end }}
+          {{- if $.Values.envSecrets }}
+            - secretRef:
+                name: {{ include "devopsschool.fullname" $ }}
+          {{- end }}
+          {{- range $.Values.envFromConfigMap }}
+            - configMapRef:
+                name: {{ . }}
+          {{- end }}
+          {{- range $.Values.envFromSecret }}
+            - secretRef:
+                name: {{ . }}
+          {{- end }}
+          {{- end }}
+          {{- if or $.Values.extraEnv $.Values.extraFieldRef }}
+          env:
+          {{- range $key, $value := $.Values.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          {{- range $.Values.extraFieldRef }}
+            - name: {{ .name }}
+              valueFrom:
+                {{- toYaml .valueFrom | nindent 16 }}
+          {{- end }}
+          {{- end }}
+          {{- with .resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or $.Values.volumes $.Values.extraVolumes $.Values.configFiles $.Values.extraConfigFiles $.Values.secretFiles $.Values.extraSecretFiles }}
+          volumeMounts:
+          {{- range $.Values.volumes }}
+            - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+              mountPath: {{ .mountPath }}
+          {{- end }}
+          {{- range $.Values.extraVolumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+          {{- end }}
+          {{- range $.Values.configFiles }}
+            - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              {{- with .readOnly }}
+              readOnly: {{ . }}
+              {{- end }}
+          {{- end }}
+          {{- range $.Values.extraConfigFiles }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              {{- with .readOnly }}
+              readOnly: {{ . }}
+              {{- end }}
+          {{- end }}
+          {{- range $.Values.secretFiles }}
+            - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              {{- with .readOnly }}
+              readOnly: {{ . }}
+              {{- end }}
+          {{- end }}
+          {{- range $.Values.extraSecretFiles }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              {{- with .readOnly }}
+              readOnly: {{ . }}
+              {{- end }}
+          {{- end }}
+          {{- end }}
+      {{- with .restartPolicy }}
+      restartPolicy: {{ . }}
+      {{- end }}
+      {{- if or $.Values.volumes $.Values.extraVolumes $.Values.configFiles $.Values.extraConfigFiles $.Values.secretFiles $.Values.extraSecretFiles }}
+      volumes:
+      {{- range $.Values.volumes }}
+        - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+          {{ toYaml .config | nindent 10 }}
+      {{- end }}
+      {{- range $.Values.extraVolumes }}
+        - name: {{ .name }}
+          {{ toYaml .config | nindent 10 }}
+      {{- end }}
+      {{- range $.Values.configFiles }}
+        - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+          configMap:
+            name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+      {{- end }}
+      {{- range $.Values.extraConfigFiles }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .name }}
+      {{- end }}
+      {{- range $.Values.secretFiles }}
+        - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+          secret:
+            secretName: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+      {{- end }}
+      {{- range $.Values.extraSecretFiles }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .name }}
+      {{- end }}
+      {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{ end }}
+{{ end }}

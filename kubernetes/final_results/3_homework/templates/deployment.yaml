@@ -1,0 +1,233 @@
+apiVersion: apps/v1
+{{- if .Values.statefulSet }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: {{ include "devopsschool.fullname" . }}
+  labels:
+    {{- include "devopsschool.labels" . | nindent 4 }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{- range $key, $value := .Values.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "devopsschool.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- if or .Values.envVariables .Values.configFiles .Values.envSecrets .Values.secretFiles .Values.podAnnotations }}
+      annotations:
+        {{- if or .Values.envVariables .Values.configFiles }}
+        checksum/config: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if or .Values.envSecrets .Values.secretFiles }}
+        checksum/secret: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.podAnnotations }}
+        {{- range $key, $value := .Values.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+      labels:
+        {{- include "devopsschool.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if and .Values.statefulSet .Values.serviceAccountName }}
+      serviceAccountName: {{ default "default" .Values.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
+      {{- with .Values.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ . }}
+      {{- end }}
+      {{- with .Values.dnsPolicy }}
+      dnsPolicy: {{ . }}
+      {{- end }}
+      {{- with .Values.injectServiceVariables }}
+      enableServiceLinks: {{ . }}
+      {{- end }}
+      {{- with .Values.schedulerName }}
+      schedulerName: {{ . }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dnsConfig }}
+      dnsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "devopsschool.fullname" . }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.command }}
+          command:
+          {{- range . }}
+            - {{ . }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.args }}
+          args:
+            - |
+{{ tpl . $ | trim | indent 14 }}
+          {{- end }}
+          {{- with .Values.lifecycleHooks }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.envVariables .Values.envSecrets .Values.envFromConfigMap .Values.envFromSecret }}
+          envFrom:
+          {{- if .Values.envVariables }}
+            - configMapRef:
+                name: {{ include "devopsschool.fullname" . }}
+          {{- end }}
+          {{- if .Values.envSecrets }}
+            - secretRef:
+                name: {{ include "devopsschool.fullname" . }}
+          {{- end }}
+          {{- range .Values.envFromConfigMap }}
+            - configMapRef:
+                name: {{ . }}
+          {{- end }}
+          {{- range .Values.envFromSecret }}
+            - secretRef:
+                name: {{ . }}
+          {{- end }}
+          {{- end }}
+          {{- if or .Values.extraEnv .Values.extraFieldRef }}
+          env:
+          {{- range $key, $value := .Values.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          {{- range .Values.extraFieldRef }}
+            - name: {{ .name }}
+              valueFrom:
+                {{- toYaml .valueFrom | nindent 16 }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.ports }}
+          ports:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.volumes .Values.extraVolumes .Values.configFiles .Values.extraConfigFiles .Values.secretFiles .Values.extraSecretFiles }}
+          volumeMounts:
+          {{- range .Values.volumes }}
+            - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+              mountPath: {{ .mountPath }}
+          {{- end }}
+          {{- range .Values.extraVolumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+          {{- end }}
+          {{- range .Values.configFiles }}
+            - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              {{- with .readOnly }}
+              readOnly: {{ . }}
+              {{- end }}
+          {{- end }}
+          {{- range .Values.extraConfigFiles }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              {{- with .readOnly }}
+              readOnly: {{ . }}
+              {{- end }}
+          {{- end }}
+          {{- range .Values.secretFiles }}
+            - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              {{- with .readOnly }}
+              readOnly: {{ . }}
+              {{- end }}
+          {{- end }}
+          {{- range .Values.extraSecretFiles }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              {{- with .readOnly }}
+              readOnly: {{ . }}
+              {{- end }}
+          {{- end }}
+          {{- end }}
+      {{- with .Values.restartPolicy }}
+      restartPolicy: {{ . }}
+      {{- end }}
+      {{- if or .Values.volumes .Values.extraVolumes .Values.configFiles .Values.extraConfigFiles .Values.secretFiles .Values.extraSecretFiles }}
+      volumes:
+      {{- range .Values.volumes }}
+        - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+          {{ toYaml .config | nindent 10 }}
+      {{- end }}
+      {{- range .Values.extraVolumes }}
+        - name: {{ .name }}
+          {{ toYaml .config | nindent 10 }}
+      {{- end }}
+      {{- range .Values.configFiles }}
+        - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+          configMap:
+            name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+      {{- end }}
+      {{- range .Values.extraConfigFiles }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .name }}
+      {{- end }}
+      {{- range .Values.secretFiles }}
+        - name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+          secret:
+            secretName: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+      {{- end }}
+      {{- range .Values.extraSecretFiles }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .name }}
+      {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

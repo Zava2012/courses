@@ -1,0 +1,38 @@
+{{- if .Values.envVariables -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "devopsschool.fullname" . }}
+  {{- if .Values.configMaps.annotations }}
+  annotations:
+  {{- range $key, $value := .Values.configMaps.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+data:
+{{- range $key, $value := .Values.envVariables }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}
+{{- end }}
+
+
+{{ if .Values.configFiles -}}
+{{ range .Values.configFiles -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "devopsschool.fullname" $ }}-{{ .name }}"
+  {{- if $.Values.configMaps.annotations }}
+  annotations:
+  {{- range $key, $value := $.Values.configMaps.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+data:
+{{- range $key, $value := .data }}
+{{ $key | indent 2 }}: |
+{{ toYaml $value | indent 4 }}
+{{- end }}
+{{ end }}
+{{ end }}

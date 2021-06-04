@@ -1,0 +1,3 @@
+include:
+  - project: zava2012/common
+    file: /templates/devopsschool.yml

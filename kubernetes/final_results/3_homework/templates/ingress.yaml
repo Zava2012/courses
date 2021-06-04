@@ -1,18 +1,20 @@
 {{- if .Values.ingress.enabled -}}
-{{- $fullName := include "helm-chart.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
-{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1
-{{- else -}}
+{{- $fullName := include "devopsschool.fullname" . -}}
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
-    {{- include "helm-chart.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+    {{- include "devopsschool.labels" . | nindent 4 }}
   annotations:
+  {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.ingress.extraAnnotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
@@ -23,7 +25,7 @@ spec:
         {{- range .hosts }}
         - {{ . | quote }}
         {{- end }}
-      secretName: {{ .secretName }}
+      secretName: {{ default "tls-certs" .secretName }}
     {{- end }}
   {{- end }}
   rules:
@@ -34,10 +36,8 @@ spec:
           {{- range .paths }}
           - path: {{ .path }}
             backend:
-              service:
-                name: {{ $fullName }}
-                port:
-                  number: {{ $svcPort }}
+              serviceName: {{ include "devopsschool.fullname" $ }}
+              servicePort: {{ .servicePort }}
           {{- end }}
     {{- end }}
   {{- end }}

@@ -1,0 +1,124 @@
+image:
+  registry: artifactory.com
+  repository: devopsschool-app
+  tag: 1.0.0
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: artifactory
+
+command: []
+
+args: []
+
+initContainers: {}
+
+lifecycleHooks: {}
+
+podAnnotations: {}
+
+nameOverride: devopsschool-app
+
+replicaCount: 1
+
+extraEnv:
+  DB_URI: postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)
+
+envVariables:
+  HOST: 0.0.0.0
+  PORT: 3000
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 250Mi
+
+ports:
+  - name: http
+    containerPort: 8080
+
+probes:
+  readinessProbe:
+    tcpSocket:
+      port: 8080
+  livenessProbe:
+    tcpSocket:
+      port: 8080
+
+job:
+  - name: migrations
+    enabled: true
+    annotations:
+      helm.sh/hook: pre-install,pre-upgrade
+      helm.sh/hook-weight: "1"
+    restartPolicy: Never
+    backoffLimit: 0
+    command: ["/bin/sh", "-c"]
+    args: |
+      alembic upgrade head
+
+service:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+
+dnsConfig: {}
+
+priorityClassName: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: worker-group
+              operator: In
+              values:
+                - applications
+
+configMaps:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: -1
+
+secret:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: -1
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-production
+  hosts:
+    - host: example.com
+      paths:
+        - path: /
+          servicePort: 80
+  tls:
+    - hosts:
+        - example.com

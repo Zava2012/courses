@@ -1,0 +1,92 @@
+include:
+  - template: Security/SAST.gitlab-ci.yml
+
+# workflow:
+#   rules:
+#     - if: $CI_PIPELINE_SOURCE == "push"
+
+.runner_tags:
+  tags:
+    - docker
+
+stages:
+  - build
+  - test
+  - deploy
+
+Build App:
+  extends: .runner_tags
+  stage: build
+  image: docker
+  services:
+    - docker:dind
+  before_script:
+    - - cat commits.txt
+    - apk add --no-cache jq
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "This is my commit $CI_COMMIT_SHA and short commit $CI_COMMIT_SHORT_SHA" > commits.txt
+    - ls -la
+    - export TAG=$(jq -r '.version' package.json)
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$TAG-$CI_COMMIT_SHORT_SHA -t $CI_REGISTRY_IMAGE:latest ./
+    - docker push $CI_REGISTRY_IMAGE:$TAG-$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  artifacts:
+    paths:
+      - commits.txt
+
+Tests:
+  extends: .runner_tags
+  stage: test
+  image: node:14-alpine
+  script:
+    - printenv
+    - ls -la
+    - npm ci
+    - npm test
+  artifacts:
+    reports:
+      junit: '**/test-results.xml'
+  # except:
+  #   - master
+  # rules:
+  #   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+Validate Dockerfile:
+  extends: .runner_tags
+  stage: test
+  image: ghcr.io/hadolint/hadolint:latest-alpine
+  script:
+    - env
+    - echo $MY_ENV
+    - hadolint -f gitlab_codeclimate Dockerfile > hadolint.json
+  artifacts:
+    reports:
+      codequality:
+        - hadolint.json
+
+Deploy:
+  extends: .runner_tags
+  image: docker
+  stage: deploy
+  environment:
+    name: test
+  before_script:
+    - apk add --no-cache curl gettext jq
+    - curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+    - chmod +x ./kubectl
+  script:
+    - printenv
+    - export TAG=$(jq -r '.version' package.json)
+    - |
+      tmpfile=$(mktemp)
+      for i in kubernetes/*.yaml; do
+          cat $i | envsubst > $tmpfile
+          cp -pf $tmpfile $i
+          rm -f "$tmpfile"
+      done
+    - ./kubectl version
+    - ./kubectl -n $KUBE_NAMESPACE apply -f kubernetes/
+  needs:
+    - Build App

@@ -1,17 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "helm-chart.fullname" . }}
+  name: {{ include "mysubchart.fullname" . }}
   labels:
-    {{- include "helm-chart.labels" . | nindent 4 }}
+    {{- include "mysubchart.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
-  # replicas: {{ .Values.mysubchart.replicaCount | default 2 }}
-  replicas: {{ .Values.replicaCount | default 2 }}
+  replicas: {{ .Values.global.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "helm-chart.selectorLabels" . | nindent 6 }}
+      {{- include "mysubchart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -19,13 +18,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "helm-chart.selectorLabels" . | nindent 8 }}
+        {{- include "mysubchart.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "helm-chart.serviceAccountName" . }}
+      serviceAccountName: {{ include "mysubchart.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

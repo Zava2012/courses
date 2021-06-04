@@ -1,0 +1,15 @@
+image:
+  repository: nginx
+  tag: 1.20-alpine
+
+imagePullSecrets:
+  - name: artifactory
+
+ingress:
+  hosts:
+    - host: example-qa.com
+      paths:
+      - path: /asdad
+        backend:
+          serviceName: chart-new.local
+          servicePort: 80

@@ -5,13 +5,13 @@ kind: Role
 metadata:
   name: myrole
 rules:
-  - verbs: ["get", "list"]
+  - apiGroups: ["apps"]
     # kubectl api-resources
     resources: ["deployments", "statefulsets"]
-    apiGroups: ["apps"]
-  - verbs: ["get", "list"]
+    verbs: ["get", "list"]
+  - apiGroups: [""] # for core API Group where apiVersion field has only API Version without explicit reference to API Group
     resources: ["pods"]
-    apiGroups: [""] # for core API Group where apiVersion field has only API Version without explicit reference to API Group
+    verbs: ["get", "list"]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -19,15 +19,16 @@ kind: ClusterRole
 metadata:
   name: myclusterrole
 rules:
-  - verbs: ["get", "list", "delete"]
+  - apiGroups: ["apps"]
     # kubectl api-resources
     resources: ["deployments"]
     resourceNames: ["ali"]
-    apiGroups: ["apps"]
-  - verbs: ["get", "list"]
+    verbs: ["get", "list", "delete"]
+  - apiGroups: [""] # for core API Group where apiVersion field has only API Version without explicit reference to API Group
     # kubectl api-resources
     resources: ["pods", "namespaces"]
-    apiGroups: [""] # for core API Group where apiVersion field has only API Version without explicit reference to API Group
+    verbs: ["get", "list"]
+
 
 # For PSP
 ---

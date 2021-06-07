@@ -1,5 +1,6 @@
 **/node_modules/
 **/dist/
 **/build/
+**/target/
 
 ci_cd/final_results/1_homework

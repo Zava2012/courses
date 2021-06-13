@@ -21,7 +21,7 @@ Build App:
   services:
     - docker:dind
   before_script:
-    - - cat commits.txt
+    - cat commits.txt
     - apk add --no-cache jq
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:

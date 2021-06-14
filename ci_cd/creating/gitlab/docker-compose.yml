@@ -4,6 +4,7 @@ services:
   gitlab:
     image: 'gitlab/gitlab-ce:latest'
     environment:
+      TZ: Europe/Moscow
       # GITLAB_OMNIBUS_CONFIG: "from_file('/omnibus_config.rb')"
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'http://localhost'
@@ -16,12 +17,17 @@ services:
       - gitlab_config:/etc/gitlab
       - gitlab_logs:/var/log/gitlab
       - gitlab_data:/var/opt/gitlab
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+
 
   gitlab-runner:
     image: gitlab/gitlab-runner
     restart: always
     volumes:
-      - gitlab-runner-config:/etc/gitlab-runner
+      - gitlab_runner_config:/etc/gitlab-runner
       - /var/run/docker.sock:/var/run/docker.sock
 
 
@@ -29,4 +35,4 @@ volumes:
   gitlab_config:
   gitlab_logs:
   gitlab_data:
-  gitlab-runner-config:
+  gitlab_runner_config:

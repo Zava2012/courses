@@ -4,99 +4,117 @@ pipeline {
     agent {
         label 'docker'
     }
-    environment {
-        IMAGE_REPO = 'zava2012/jenkins-test'
-        TAG = sh(script: "jq -r '.version' ci_cd/examples/jenkins/package.json", returnStdout: true).trim()
+
+    // tools {
+    //     dockerTool 'docker'
+    // }
+
+    options {
+        buildDiscarder logRotator(numToKeepStr: '5')
+        timestamps()
     }
+
+    // parameters {
+    //     choice choices: ['first choice', 'second choice', 'third choice', 'my choice'], name: 'MYCHOICE'
+    // }
+
     // triggers {
     //     cron '*/5 * * * *'
     // }
+
+    environment {
+        IMAGE_REPO = 'myusername/jenkins'
+        TAG = sh(script: "jq -r .version package.json", returnStdout: true).trim()
+    }
+
     stages {
-        stage("Validate Dockerfile") {
-            agent {
-                docker {
-                    image 'ghcr.io/hadolint/hadolint:latest-alpine'
-                    label 'docker'
-                }
-            }
-            steps {
-                sh 'env'
-                sh 'echo my $STAGE_NAME > file'
-                myVars("${STAGE_NAME}")
-                sh 'ls -la && cat file'
-                stash includes: '**/file', name: 'myfile'
-                sh 'hadolint -f json ci_cd/examples/jenkins/Dockerfile > hadolint.json'
-            }
-            post {
-                always {
-                    recordIssues(tools: [hadoLint(pattern: '**/hadolint.json')])
-                }
-            }
-        }
-        stage("Build App") {
-            steps {
-                unstash 'myfile'
-                sh 'env'
-                sh 'ls -la && cat file'
-                sh 'docker build -t $IMAGE_REPO:$TAG-$GIT_COMMIT -t $IMAGE_REPO:latest ./ci_cd/examples/jenkins/'
-            }
-        }
-        stage("Tests") {
-            when {
-                not {
-                    branch 'master'
-                }
-            }
+        stage('Tests') {
             agent {
                 docker {
                     image 'node:14-alpine'
                     label 'docker'
                 }
             }
+
+            // when {
+            //     changeset 'test/*.js'
+            //     beforeAgent true
+            // }
+
+            when {
+                changeRequest()
+                // branch 'master'
+                beforeAgent true
+            }
+
             steps {
                 sh '''
-                cd ci_cd/examples/jenkins/
+                echo $MYCHOICE
                 npm ci
                 npm test
                 '''
+
+                // stash(
+                //     includes: '**/test-results.xml',
+                //     name: 'mystash'
+                // )
             }
             post {
                 always {
-                    // junit '**/test-results.xml'
                     recordIssues(
                         enabledForFailure: true,
-                        tools: [junitParser(pattern: '**/test-results.xml')]
+                        tools: [
+                            junitParser(pattern: '**/test-results.xml')
+                        ]
                     )
                 }
             }
         }
-        stage("Docker Push") {
+
+        stage('Build') {
             steps {
+                // unstash 'mystash'
+                // sh 'cat test-results.xml'
+
+                myVars('me')
+
                 withDockerRegistry(credentialsId: 'dockerhub', url: 'https://index.docker.io/v1/') {
                     sh '''
+                    printenv
+                    docker build -t $IMAGE_REPO:$TAG-$GIT_COMMIT -t $IMAGE_REPO:latest ./
                     docker push $IMAGE_REPO:$TAG-$GIT_COMMIT
                     docker push $IMAGE_REPO:latest
                     '''
                 }
             }
         }
-        stage("Deploy") {
+
+        stage('Deploy') {
+            environment {
+                NAMESPACE = 'mynamespace'
+            }
+
+            input {
+                message 'Do you want to deploy on Production'
+            }
+
             steps {
-                // input 'Do you want to deploy on Production?'
                 sh '''
                 tmpfile=$(mktemp)
-                for i in ci_cd/examples/jenkins/kubernetes/*.yaml; do
+                for i in kubernetes/*.yaml; do
                     cat $i | envsubst > $tmpfile
                     cp -pf $tmpfile $i
                     rm -f "$tmpfile"
                 done
                 '''
-                withKubeConfig(credentialsId: 'kubeconfig') {
-                    sh 'kubectl apply -f ci_cd/examples/jenkins/kubernetes/'
+
+                withCredentials([kubeconfigFile(credentialsId: 'freestyle-kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh 'kubectl -n $NAMESPACE apply -f kubernetes/'
                 }
             }
         }
     }
+
     post {
         cleanup {
             cleanWs()

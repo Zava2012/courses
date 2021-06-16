@@ -23,7 +23,7 @@ services:
         max-size: "50m"
 
 
-  gitlab-runner:
+  gitlab_runner:
     image: gitlab/gitlab-runner
     restart: always
     volumes:

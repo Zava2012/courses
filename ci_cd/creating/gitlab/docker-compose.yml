@@ -6,6 +6,7 @@ services:
     environment:
       TZ: Europe/Moscow
       # GITLAB_OMNIBUS_CONFIG: "from_file('/omnibus_config.rb')"
+      # Config File path inside container: /etc/gitlab/gitlab.rb
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'http://localhost'
         gitlab_rails['gitlab_shell_ssh_port'] = 2222
@@ -29,6 +30,16 @@ services:
     volumes:
       - gitlab_runner_config:/etc/gitlab-runner
       - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      REGISTER_NON_INTERACTIVE: "true"
+      # REGISTER_LOCKED: "false"
+      RUNNER_NAME: myrunnernew
+      CI_SERVER_URL: https://gitlab.com/
+      REGISTRATION_TOKEN: YOUR_TOKEN
+      RUNNER_TAG_LIST: docker, baremetal
+      RUNNER_EXECUTOR: docker
+      DOCKER_IMAGE: alpine
+      DOCKER_VOLUMES: /var/run/docker.sock:/var/run/docker.sock
 
 
 volumes:

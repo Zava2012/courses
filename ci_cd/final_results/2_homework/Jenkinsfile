@@ -1,0 +1,107 @@
+pipeline {
+    agent {
+        label 'docker'
+    }
+
+    environment {
+        IMAGE_REPO = 'myusername/jenkins-test'
+        TAG = sh(script: 'cat VERSION.txt', returnStdout: true).trim()
+    }
+
+    stages {
+        stage("Build") {
+            steps {
+                sh '''
+                docker pull $IMAGE_REPO:latest || true
+                docker build --cache-from $IMAGE_REPO:latest -t $IMAGE_REPO:$TAG-$GIT_COMMIT -t $IMAGE_REPO:latest ./
+                '''
+
+                withDockerRegistry(credentialsId: 'dockerhub', url: 'https://index.docker.io/v1/') {
+                    sh '''
+                    docker push $IMAGE_REPO:$TAG-$GIT_COMMIT
+                    docker push $IMAGE_REPO:latest
+                    '''
+                }
+            }
+        }
+
+        stage("Tests") {
+            when {
+                // not {
+                //     environment name: 'GIT_BRANCH', value: 'origin/master'
+                // }
+                environment name: 'GIT_BRANCH', value: 'origin/master'
+            }
+            parallel {
+                stage("Unit Tests") {
+                    agent {
+                        docker {
+                            image 'maven:3-alpine'
+                            label 'docker'
+                        }
+                    }
+                    steps {
+                        sh 'mvn test'
+                    }
+                    post {
+                        always {
+                            recordIssues(
+                                enabledForFailure: true,
+                                tools: [junitParser(pattern: '**/surefire-reports/*.xml')]
+                            )
+                        }
+                    }
+                }
+
+                stage("Security Scanning") {
+                    agent {
+                        docker {
+                            image 'aquasec/trivy'
+                            label 'docker'
+                            args '--entrypoint='
+                        }
+                    }
+                    steps {
+                        sh 'trivy --cache-dir .trivycache/ -f json -o trivy.json $IMAGE_REPO:$TAG-$GIT_COMMIT'
+                    }
+                    post {
+                        always {
+                            recordIssues(
+                                enabledForFailure: true,
+                                tools: [trivy(pattern: '**/trivy.json')]
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        stage("Deploy") {
+            agent {
+                docker {
+                    image 'alpine/helm'
+                    label 'docker'
+                    args '--entrypoint='
+                }
+            }
+
+            input {
+                message 'Do you want to deploy on Production?'
+                parameters {
+                    choice choices: ['yaroshenko', 'pyrko', 'default', 'kube-system'], name: 'NAMESPACE'
+                }
+            }
+
+            steps {
+                withCredentials([kubeconfigFile(credentialsId: 'freestyle-kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh 'helm -n $NAMESPACE upgrade --install --wait --atomic devopsschool-app helm/ --set image.repository=$IMAGE_REPO --set image.tag=$TAG-$GIT_COMMIT'
+                }
+            }
+        }
+    }
+    post {
+        cleanup {
+            cleanWs()
+        }
+    }
+}

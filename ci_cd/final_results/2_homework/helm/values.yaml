@@ -1,0 +1,32 @@
+nameOverride: devopsschool-app
+
+imagePullSecrets:
+  - name: dockerhub
+
+replicaCount: 1
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 250Mi
+
+job:
+  - name: http-job
+    enabled: true
+    restartPolicy: Never
+
+affinity: {}
+
+ingress:
+  enabled: false

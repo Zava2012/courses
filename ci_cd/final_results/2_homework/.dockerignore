@@ -1,0 +1,6 @@
+helm/
+target/
+
+Dockerfile*
+Jenkinsfile*
+*.txt

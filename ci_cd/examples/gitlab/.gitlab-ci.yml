@@ -1,3 +1,133 @@
-include:
-  - project: zava2012/common
-    file: /templates/devopsschool.yml
+# workflow:
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == 'main'
+
+# include:
+#   - project: muysername/gitlab-ci-cd-dry
+#     file: asd/myjob.yaml
+#   - template: Security/SAST.gitlab-ci.yml
+
+# default:
+#   image: alpine
+
+variables:
+  MY_CUSTOM_ENV: myvalue
+
+stages:
+  - test
+  - build
+  - deploy
+  - release
+
+.runner_tags:
+  tags:
+    - docker
+
+.common:
+  script: echo 123
+
+tests:
+  extends:
+    - .runner_tags
+    - .common
+  stage: test
+  image: node:14-alpine
+  script:
+    - echo "$CI_JOB_NAME" > commit_message.txt
+    - printenv
+    - npm install
+    - npm test
+    # - command $MY_CUSTOM_ENV
+  cache:
+    key: $CI_COMMIT_BRANCH
+    paths:
+      - node_modules/
+  artifacts:
+    reports:
+      junit: '**/test-results.xml'
+    paths:
+      - commit_message.txt
+  only:
+    - master
+    # - merge_requests
+  # except:
+  #   - master
+  # rules:
+  #   - if: $CI_COMMIT_BRANCH
+
+build_app:
+  extends: .runner_tags
+  stage: build
+  image: docker
+  services:
+    - docker:dind
+  before_script:
+    - printenv
+    # - cat commit_message.txt
+    - echo "$CI_JOB_NAME" > commit_new_message.txt
+    - apk add --no-cache jq
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - export TAG=$(jq -r .version package.json)
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$TAG-$CI_COMMIT_SHORT_SHA -t $CI_REGISTRY_IMAGE:latest ./
+    - docker push $CI_REGISTRY_IMAGE:$TAG-$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  artifacts:
+    paths:
+      - commit_new_message.txt
+
+deploy_to_production:
+  extends: .runner_tags
+  stage: deploy
+  image: alpine
+  environment:
+    name: production
+  when: manual
+  variables:
+    NAMESPACE: yaroshenko
+  before_script:
+    - printenv
+    - apk add --no-cache gettext curl jq
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+    - chmod +x kubectl
+    - export TAG=$(jq -r .version package.json)
+    - cat commit_new_message.txt
+    # - cat commit_message.txt
+  script:
+    - |
+      tmpfile=$(mktemp)
+      for i in kubernetes/*.yaml; do
+          cat $i | envsubst > $tmpfile
+          cp -pf $tmpfile $i
+          rm -f "$tmpfile"
+      done
+    - ./kubectl -n $NAMESPACE apply -f kubernetes/
+  # dependencies:
+  #   - build_app
+  # needs:
+  #   - tests
+
+release:
+  extends: .runner_tags
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  script:
+    - printenv
+  release:
+    tag_name: $CI_COMMIT_TAG
+    description: my new release $TAG with Docker image $CI_REGISTRY_IMAGE:$TAG-$CI_COMMIT_SHORT_SHA
+    # description: myreleasefile.md
+  # needs:
+  #   - deploy_to_production
+  rules:
+    - if: $CI_COMMIT_TAG
+
+pages:
+  image: alpine
+  script:
+    - mkdir public/
+    - mv index.html public/
+  artifacts:
+    paths:
+      - public/

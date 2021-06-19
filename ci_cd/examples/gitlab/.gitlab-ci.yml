@@ -35,7 +35,7 @@ tests:
   script:
     - echo "$CI_JOB_NAME" > commit_message.txt
     - printenv
-    - npm install
+    - npm ci
     - npm test
     # - command $MY_CUSTOM_ENV
   cache:

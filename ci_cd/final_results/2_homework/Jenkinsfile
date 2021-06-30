@@ -27,10 +27,10 @@ pipeline {
 
         stage("Tests") {
             when {
-                // not {
-                //     environment name: 'GIT_BRANCH', value: 'origin/master'
-                // }
-                environment name: 'GIT_BRANCH', value: 'origin/master'
+                not {
+                    environment name: 'GIT_BRANCH', value: 'origin/master'
+                }
+                // environment name: 'GIT_BRANCH', value: 'origin/master'
             }
             parallel {
                 stage("Unit Tests") {
@@ -45,6 +45,7 @@ pipeline {
                     }
                     post {
                         always {
+                            // junit '**/surefire-reports/*.xml'
                             recordIssues(
                                 enabledForFailure: true,
                                 tools: [junitParser(pattern: '**/surefire-reports/*.xml')]
@@ -102,6 +103,7 @@ pipeline {
     post {
         cleanup {
             cleanWs()
+            // sh 'docker-compose down -v'
         }
     }
 }

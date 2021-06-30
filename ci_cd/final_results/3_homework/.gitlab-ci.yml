@@ -1,0 +1,82 @@
+.runner_tags:
+  tags:
+    - docker
+
+.deploy:
+  image:
+    name: alpine/helm
+    entrypoint: [""]
+  stage: deploy
+  script:
+    - export TAG=$(cat VERSION.txt)
+    - helm -n $NAMESPACE upgrade --install --wait --atomic devopsschool-app helm/ --set image.repository=$CI_REGISTRY_IMAGE --set image.tag=$TAG-$CI_COMMIT_SHORT_SHA
+
+stages:
+  - build
+  - test
+  - deploy
+
+build_app:
+  extends: .runner_tags
+  stage: build
+  image: docker
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - export TAG=$(cat VERSION.txt)
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$TAG-$CI_COMMIT_SHORT_SHA -t $CI_REGISTRY_IMAGE:latest ./
+    - docker push $CI_REGISTRY_IMAGE:$TAG-$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+unit_tests:
+  extends: .runner_tags
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:5.0
+  script:
+    - cd myapp/
+    - dotnet test -l junit
+  artifacts:
+    reports:
+      junit: '**/TestResults.xml'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  # only:
+  #   - merge_requests
+
+dockerfile_validation:
+  extends: .runner_tags
+  stage: test
+  image: ghcr.io/hadolint/hadolint:latest-alpine
+  script:
+    - hadolint -f gitlab_codeclimate Dockerfile > hadolint.json
+  artifacts:
+    reports:
+      codequality: ["hadolint.json"]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  # only:
+  #   - merge_requests
+
+deploy_to_staging:
+  extends:
+    - .runner_tags
+    - .deploy
+  environment:
+    name: staging
+    url: https://staging.example.com
+  except:
+    - master
+
+deploy_to_production:
+  extends:
+    - .runner_tags
+    - .deploy
+  environment:
+    name: production
+    url: https://example.com
+  when: manual
+  only:
+    - master

@@ -1,0 +1,59 @@
+nameOverride: devopsschool-app
+
+replicaCount: 2
+
+imagePullSecrets:
+  - name: gitlab
+
+command: []
+
+args: []
+
+initContainers: {}
+
+lifecycleHooks: {}
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 100Mi
+
+ports:
+  - name: http
+    containerPort: 80
+
+probes:
+  readinessProbe:
+    tcpSocket:
+      port: 80
+  livenessProbe:
+    tcpSocket:
+      port: 80
+
+service:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+
+podDisruptionBudget:
+  minAvailable: 1
+
+dnsConfig: {}
+
+priorityClassName: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+ingress:
+  enabled: false
